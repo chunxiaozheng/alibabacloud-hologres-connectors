@@ -33,11 +33,15 @@ public class Reporter {
     File file = new File(dir, "result.csv");
     try (BufferedWriter bw = new BufferedWriter(
         new OutputStreamWriter(new FileOutputStream(file)))) {
-      bw.write("start,end,count,qps1,qps5,qps15,latencyMean,latencyP99,latencyP999,memoryUsage,version\n");
+      bw.write("start,end, cost, count,qps1,qps5,qps15,latencyMean,latencyP99,latencyP999,memoryUsage,version\n");
       bw.write(String.valueOf(start));
       bw.write(',');
       bw.write(String.valueOf(System.currentTimeMillis()));
       bw.write(',');
+
+      bw.write(String.valueOf((System.currentTimeMillis() - start) / 1_000.0));
+      bw.write(',');
+
       bw.write(String.valueOf(count));
       bw.write(',');
       bw.write(String.valueOf(qps1));

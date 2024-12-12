@@ -1,0 +1,109 @@
+#==============================================================================
+# Zookeeper
+#==============================================================================
+
+# Zookeeper connection string (see zookeeper docs for details).
+# This is a comma separated host:port pairs, each corresponding to a zk
+# server. e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002".
+# You can also append an optional chroot string to the urls to specify the
+# root directory for all Fluss znodes.
+zookeeper.address: mse-xxxxx-zk.mse.aliyuncs.com:2181
+zookeeper.path.root: fluss-kv-bench-new
+
+#==============================================================================
+# Common
+#==============================================================================
+
+# THe default bucket number to be used when creating tables if no bucket number
+# is specified for the table.
+default.bucket.number: 20
+
+# The default replication factor to be used when creating tables if no replication
+# factor is specified for the table.
+default.replication.factor: 3
+
+# The local data directory to be used for Fluss to storing kv and log data.
+data.dir: datadir
+
+# The remote data directory to be used for Fluss. Now, it is only used for storing
+# kv snapshot data. Expected be set to a remote location like: oss://bucket/path for oss
+# filesystem or hdfs://namenode:port/path for hdfs filesystem
+remote.data.dir: oss://fluss-oss-test/fluss-kv-bench-new
+kv.rocksdb.write-batch-size: 128mb
+
+#==============================================================================
+# Coordinator Server
+#==============================================================================
+
+# The external address of the host on which the Coordinator Server runs and
+# can be reached by the Tablet Servers and any clients which want to connect.
+coordinator.host: fluss-kv-server1
+
+# The RPC port where the Coordinator Server is reachable.
+coordinator.port: 9123
+
+#==============================================================================
+# Tablet Server
+#==============================================================================
+
+# The external address of the host on which the Tablet Server runs and
+# can be reached by the Coordinator Server and any clients which want to connect.
+tablet-server.host: fluss-kv-server1
+
+# The id of the tablet server to be run, must be set and should be different
+# when running multiple tablet servers.
+tablet-server.id: 0
+kv.snapshot.interval: 600000s
+kv.rocksdb.key-prefix-length: 2
+
+# netty.server.num-worker-threads: 16
+
+#==============================================================================
+# OSS FileSystem
+#==============================================================================
+
+# The configuration for oss filesystem when using oss as the remote data directory
+fs.oss.endpoint: oss-cn-hangzhou-internal.aliyuncs.com
+fs.oss.accessKeyId: xxx
+fs.oss.accessKeySecret: xxx
+fs.oss.sts.endpoint: sts.cn-hangzhou.aliyuncs.com
+fs.oss.roleArn: xxx
+
+
+
+#netty.server.num-network-threads: 16
+
+
+#log.fetch.max-bytes-for-bucket: 128mb
+
+
+#log.replica.fetcher-number: 10
+
+
+kv.rocksdb.use-bloom-filter: true
+
+kv.rocksdb.writebuffer.size: 128MB
+
+kv.rocksdb.writebuffer.count: 5
+
+kv.rocksdb.writebuffer.number-to-merge: 1
+
+kv.rocksdb.thread.num: 32
+
+#kv.rocksdb.compaction.level.target-file-size-base: 32mb
+#kv.rocksdb.compaction.level.max-size-level-base: 512mb
+
+table.log.format: INDEXED
+
+env.java.opts.all: -DARROW_ENABLE_UNSAFE_MEMORY_ACCESS=true -Darrow.enable_unsafe_memory_access=true
+
+remote.log.task-interval-duration: 0s
+
+
+#log.replica.fetcher-number: 8
+
+
+#netty.server.num-network-threads: 8
+
+
+#log.fetch.max-bytes-for-bucket: 10mb

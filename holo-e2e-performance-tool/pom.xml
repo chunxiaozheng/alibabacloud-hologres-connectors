@@ -24,6 +24,16 @@
       <artifactId>slf4j-simple</artifactId>
       <version>1.7.10</version>
     </dependency>
+    <dependency>
+      <groupId>com.alibaba.fluss</groupId>
+      <artifactId>fluss-client</artifactId>
+      <version>0.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.alibaba.fluss</groupId>
+      <artifactId>fluss-fs-oss</artifactId>
+      <version>0.5.0</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -38,11 +48,13 @@
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
         <configuration>
           <appendAssemblyId>false</appendAssemblyId>
           <archive>
             <manifest>
-              <mainClass>com.alibaba.hologres.performace.client.Main</mainClass>
+              <mainClass>com.alibaba.fluss.performance.client.Main</mainClass>
+<!--              <mainClass>com.alibaba.hologres.performace.client.Main</mainClass>-->
             </manifest>
           </archive>
           <descriptorRefs>
@@ -54,7 +66,7 @@
             <id>make-assembly</id>
             <phase>package</phase>
             <goals>
-              <goal>assembly</goal>
+              <goal>single</goal>
             </goals>
           </execution>
         </executions>

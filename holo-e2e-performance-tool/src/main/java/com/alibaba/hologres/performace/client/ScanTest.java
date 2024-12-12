@@ -129,35 +129,26 @@ public class ScanTest {
         client = new HoloClient(clientConf);
         pool = new HoloClientExecutionPool(poolConf, this.id, conf.singleExecutionPool);
         pool.setHoloClientPool(client);
-        int i = 0;
         CompletableFuture<Void> future = null;
-        while (true) {
-          if (++i % 1000 == 0) {
-            if (System.currentTimeMillis() > targetTime) {
-              break;
-            }
-          }
-          TableSchema schema = client.getTableSchema(conf.tableName);
-          Scan.Builder scanBuilder = Scan.newBuilder(schema).setSortKeys(SortKeys.NONE);
-          for (int j = 0; j < schema.getDistributionKeys().length; ++j) {
-            scanBuilder.addEqualFilter(schema.getDistributionKeys()[j], provider.get(j));
-          }
-          Scan scan = scanBuilder.build();
+        TableSchema schema = client.getTableSchema(conf.tableName);
+        Scan.Builder scanBuilder = Scan.newBuilder(schema).setSortKeys(SortKeys.NONE);
+        Scan scan = scanBuilder.build();
 
-          long startNano = System.nanoTime();
-          if (conf.async) {
-            future = client.asyncScan(scan).thenAccept(rs -> {
-              meter.mark();
-              long endNano = System.nanoTime();
-              hist.update((endNano - startNano) / 1000000L);
-            });
-          } else {
-            try (RecordScanner rs = client.scan(scan)) {
-            }
+        long startNano = System.nanoTime();
+        if (conf.async) {
+          future = client.asyncScan(scan).thenAccept(rs -> {
             meter.mark();
             long endNano = System.nanoTime();
             hist.update((endNano - startNano) / 1000000L);
+          });
+        } else {
+          try (RecordScanner rs = client.scan(scan)) {
+            while (rs.next()) {
+              meter.mark();
+            }
           }
+          long endNano = System.nanoTime();
+          hist.update((endNano - startNano) / 1000000L);
         }
         if (conf.async && future != null) {
           future.get();
