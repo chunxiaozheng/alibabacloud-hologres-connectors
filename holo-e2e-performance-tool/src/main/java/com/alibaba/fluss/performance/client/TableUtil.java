@@ -3,7 +3,6 @@
  */
 package com.alibaba.fluss.performance.client;
 
-import com.alibaba.fluss.config.ConfigOptions;
 import com.alibaba.fluss.metadata.Schema;
 import com.alibaba.fluss.metadata.TableDescriptor;
 import com.alibaba.fluss.types.DataTypes;
@@ -21,7 +20,6 @@ public class TableUtil {
         if (shardCount > 0) {
             tableDescriptorBuilder.distributedBy(shardCount, "id");
         }
-        tableDescriptorBuilder.property(ConfigOptions.TABLE_LOG_FORMAT.key(), "INDEXED");
         return tableDescriptorBuilder.build();
     }
 }

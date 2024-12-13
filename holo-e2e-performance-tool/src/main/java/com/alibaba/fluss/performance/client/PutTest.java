@@ -3,6 +3,10 @@
  */
 package com.alibaba.fluss.performance.client;
 
+import com.alibaba.fluss.row.InternalRow;
+import com.alibaba.fluss.row.compacted.CompactedRow;
+import com.alibaba.fluss.row.encode.RowEncoder;
+import com.alibaba.fluss.types.DataTypeRoot;
 import com.alibaba.hologres.client.model.HoloVersion;
 import com.alibaba.hologres.client.utils.ConfLoader;
 import com.alibaba.hologres.client.utils.Metrics;
@@ -24,7 +28,6 @@ import com.alibaba.fluss.metadata.TableDescriptor;
 import com.alibaba.fluss.metadata.TablePath;
 import com.alibaba.fluss.row.BinaryString;
 import com.alibaba.fluss.row.indexed.IndexedRow;
-import com.alibaba.fluss.row.indexed.IndexedRowWriter;
 import com.alibaba.fluss.types.DataType;
 import com.alibaba.fluss.types.RowType;
 
@@ -89,7 +92,6 @@ public class PutTest {
         this.prefix = sb.toString();
         this.prefixBytes = this.prefix.getBytes();
 
-
         barrier = new CyclicBarrier(putConf.threadSize, ()->{
             memoryUsage = Util.getMemoryStat();
             Util.dumpHeap(confName);
@@ -105,7 +107,7 @@ public class PutTest {
         for (i = 0; i < threads.length; ++i) {
             threads[i].join();
         }
-        LOG.info("finished, {} rows has written", (Object)this.totalCount.get());
+        LOG.info("finished, {} rows has written", this.totalCount.get());
         Metrics.reporter().report();
         Meter meter = Metrics.registry().meter("write_rps");
         Histogram hist = Metrics.registry().histogram("write_latency");
@@ -134,18 +136,11 @@ public class PutTest {
         final int id;
         final DataType[] dataTypes;
         final RowType rowType;
-        final IndexedRowWriter writer;
-        private final IndexedRowWriter.FieldWriter[] writers;
 
         public InsertJob(int id) {
             this.id = id;
             this.dataTypes = PutTest.this.schema.toRowType().getChildren().toArray(new DataType[0]);
             this.rowType = PutTest.this.schema.toRowType();
-            this.writer = new IndexedRowWriter(this.dataTypes);
-            this.writers = new IndexedRowWriter.FieldWriter[this.dataTypes.length];
-            for (int i = 0; i < this.dataTypes.length; ++i) {
-                this.writers[i] = IndexedRowWriter.createFieldWriter(this.dataTypes[i]);
-            }
         }
 
         @Override
@@ -162,6 +157,7 @@ public class PutTest {
                 }
                 try (Table table = PutTest.this.connection.getTable(PutTest.this.tablePath)){
                     UpsertWriter upsertWriter = table.getUpsertWriter(upsertWrite);
+                    RowEncoder rowEncoder = RowEncoder.create(table.getDescriptor().getKvFormat(), this.dataTypes);
                     int i = 0;
                     while (true) {
                         int pk = PutTest.this.tic.incrementAndGet();
@@ -177,10 +173,14 @@ public class PutTest {
                             PutTest.this.totalCount.addAndGet(i - 1);
                             break;
                         }
-                        IndexedRow row = this.newRow(pk, this.dataTypes, writeColumns);
+                        InternalRow row = this.newRow(pk, this.dataTypes, rowEncoder);
                         upsertWriter.upsert(row);
                         meter.mark();
-                        bpsMeter.mark(row.getSizeInBytes());
+                        if (row instanceof IndexedRow) {
+                            bpsMeter.mark(((IndexedRow) row).getSizeInBytes());
+                        } else if (row instanceof CompactedRow) {
+                            bpsMeter.mark(((CompactedRow) row).getSizeInBytes());
+                        }
                     }
                     upsertWriter.flush();
                 }
@@ -189,28 +189,15 @@ public class PutTest {
             }
         }
 
-        private IndexedRow newRow(int id, DataType[] dataTypes,
-                                  int writeColumns) {
-            IndexedRow indexedRow = new IndexedRow(dataTypes);
-            this.writer.reset();
-            block4: for (int i = 0; i < writeColumns; ++i) {
-                DataType dataType = dataTypes[i];
-                switch (dataType.getTypeRoot()) {
-                    case INTEGER: {
-                        this.writers[i].writeField(this.writer, i, id);
-                        continue block4;
-                    }
-                    case STRING: {
-                        this.writers[i].writeField(this.writer, i, BinaryString.fromBytes(PutTest.this.prefixBytes));
-                        continue block4;
-                    }
-                    default: {
-                        throw new RuntimeException("not support type " + (Object)((Object)dataType.getTypeRoot()));
-                    }
-                }
+        private InternalRow newRow(int id, DataType[] dataTypes, RowEncoder rowEncoder) {
+            rowEncoder.startNewRow();
+            for (int i = 0; i < dataTypes.length; i++) {
+                rowEncoder.encodeField(
+                        i,
+                        dataTypes[i].getTypeRoot().equals(DataTypeRoot.INTEGER)
+                                ? id : BinaryString.fromBytes(PutTest.this.prefixBytes));
             }
-            indexedRow.pointTo(this.writer.segment(), 0, this.writer.position());
-            return indexedRow;
+            return rowEncoder.finishRow();
         }
     }
 }
