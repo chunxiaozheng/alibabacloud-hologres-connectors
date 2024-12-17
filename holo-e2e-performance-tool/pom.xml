@@ -27,12 +27,12 @@
     <dependency>
       <groupId>com.alibaba.fluss</groupId>
       <artifactId>fluss-client</artifactId>
-      <version>0.5.0</version>
+      <version>0.6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.alibaba.fluss</groupId>
       <artifactId>fluss-fs-oss</artifactId>
-      <version>0.5.0</version>
+      <version>0.6-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
