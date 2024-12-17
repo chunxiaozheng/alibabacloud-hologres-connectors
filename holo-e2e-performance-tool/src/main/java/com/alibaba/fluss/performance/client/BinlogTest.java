@@ -65,8 +65,6 @@ public class BinlogTest {
         ConfLoader.load(confName, "prepareBinlogData.", prepareBinlogDataConf);
         totalRecords = new AtomicLong();
 
-
-
         Configuration flussConf = new Configuration();
         flussConf.setString(ConfigOptions.BOOTSTRAP_SERVERS.key(),
                 this.clientConf.bootstrapServers);
@@ -152,8 +150,7 @@ public class BinlogTest {
                 Histogram hist = Metrics.registry().histogram(METRICS_BINLOG_PERF_LATENCY);
 
                 try (Table table = connection.getTable(tablePath)) {
-                    LogScan logScan
-                            = new LogScan();
+                    LogScan logScan = new LogScan();
                     logScan.withProjectedFields(projectFields);
 //                    for (Integer shardId : shardList) {
 //                        logScan.addBucketWithOffset(new BucketAndOffset(shardId, 0));

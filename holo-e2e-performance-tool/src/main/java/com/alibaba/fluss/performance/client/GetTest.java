@@ -98,8 +98,7 @@ public class GetTest {
         this.connection.close();
     }
 
-    class Job
-    implements Runnable {
+    class Job implements Runnable {
         int id;
         final DataType[] pkDataTypes;
         final IndexedRowWriter pkRowWriter;

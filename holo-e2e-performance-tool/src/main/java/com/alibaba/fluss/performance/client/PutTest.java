@@ -33,7 +33,6 @@ import com.alibaba.fluss.types.RowType;
 
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
@@ -42,7 +41,7 @@ import org.slf4j.LoggerFactory;
 
 public class PutTest {
     public static final Logger LOG = LoggerFactory.getLogger(InsertTest.class);
-    private AtomicInteger tic = new AtomicInteger(0);
+    private AtomicLong tic = new AtomicLong(0);
     protected String confName;
     protected final PutTestConf putConf = new PutTestConf();
     private final ClientConf clientConf = new ClientConf();
@@ -131,8 +130,7 @@ public class PutTest {
         ConfLoader.load(this.confName, "client.", this.clientConf);
     }
 
-    class InsertJob
-    implements Runnable {
+    class InsertJob implements Runnable {
         final int id;
         final DataType[] dataTypes;
         final RowType rowType;
@@ -155,12 +153,12 @@ public class PutTest {
                     writeColumns = putConf.writeColumnCount + 1;
                     upsertWrite = upsertWrite.withPartialUpdate(IntStream.range(0, writeColumns).toArray());
                 }
-                try (Table table = PutTest.this.connection.getTable(PutTest.this.tablePath)){
+                try (Table table = PutTest.this.connection.getTable(PutTest.this.tablePath)) {
                     UpsertWriter upsertWriter = table.getUpsertWriter(upsertWrite);
                     RowEncoder rowEncoder = RowEncoder.create(table.getDescriptor().getKvFormat(), this.dataTypes);
                     int i = 0;
                     while (true) {
-                        int pk = PutTest.this.tic.incrementAndGet();
+                        long pk = PutTest.this.tic.incrementAndGet();
                         ++i;
                         if (PutTest.this.putConf.testByTime) {
                             if (i % 1000 == 0 && System.currentTimeMillis() > PutTest.this.targetTime) {
@@ -168,8 +166,8 @@ public class PutTest {
                                 PutTest.this.totalCount.addAndGet(i - 1);
                                 break;
                             }
-                        } else if ((long)pk > PutTest.this.putConf.rowNumber) {
-                            LOG.info("insert write : {}", (Object)(i - 1));
+                        } else if (pk > PutTest.this.putConf.rowNumber) {
+                            LOG.info("insert write : {}", i - 1);
                             PutTest.this.totalCount.addAndGet(i - 1);
                             break;
                         }
@@ -189,15 +187,23 @@ public class PutTest {
             }
         }
 
-        private InternalRow newRow(int id, DataType[] dataTypes, RowEncoder rowEncoder) {
+        private InternalRow newRow(long id, DataType[] dataTypes, RowEncoder rowEncoder) {
             rowEncoder.startNewRow();
             for (int i = 0; i < dataTypes.length; i++) {
-                rowEncoder.encodeField(
-                        i,
-                        dataTypes[i].getTypeRoot().equals(DataTypeRoot.INTEGER)
-                                ? id : BinaryString.fromBytes(PutTest.this.prefixBytes));
+                rowEncoder.encodeField(i, encodeFieldValue(id, dataTypes[i].getTypeRoot()));
             }
             return rowEncoder.finishRow();
+        }
+
+        private Object encodeFieldValue(long id, DataTypeRoot typeRoot) {
+            switch (typeRoot) {
+                case BIGINT:
+                    return id;
+                case STRING:
+                    return BinaryString.fromBytes(PutTest.this.prefixBytes);
+                default:
+                    throw new RuntimeException("UnSupport data type: " + typeRoot);
+            }
         }
     }
 }

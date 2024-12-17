@@ -10,7 +10,7 @@ import com.alibaba.fluss.types.DataTypes;
 public class TableUtil {
     public static TableDescriptor createTablePathAndDescriptor(int columnCount, int shardCount) {
         Schema.Builder schemaBuilder = Schema.newBuilder();
-        schemaBuilder.column("id", DataTypes.INT());
+        schemaBuilder.column("id", DataTypes.BIGINT());
         schemaBuilder.primaryKey("id");
         for (int i = 0; i < columnCount; ++i) {
             schemaBuilder.column("name" + i, DataTypes.STRING());

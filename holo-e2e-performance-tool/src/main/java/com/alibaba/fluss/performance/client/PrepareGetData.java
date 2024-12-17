@@ -5,8 +5,7 @@ package com.alibaba.fluss.performance.client;
 
 import com.alibaba.hologres.client.utils.ConfLoader;
 
-public class PrepareGetData
-extends PutTest {
+public class PrepareGetData extends PutTest {
     GetTestConf getTestConf = new GetTestConf();
     PrepareGetDataConf prepareGetDataConf = new PrepareGetDataConf();
 
