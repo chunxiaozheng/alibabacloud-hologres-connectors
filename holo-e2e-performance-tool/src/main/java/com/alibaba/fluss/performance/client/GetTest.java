@@ -162,7 +162,7 @@ public class GetTest {
         InternalRow newInternalRow(Object[] pkFields) {
             pkRowWriter.reset();
             for (int i = 0; i < pkFields.length; i++) {
-                this.pkRowFieldWriters[i].writeField(pkRowWriter, i, ((Long)pkFields[i]).intValue());
+                this.pkRowFieldWriters[i].writeField(pkRowWriter, i, pkFields[i]);
             }
             IndexedRow indexedRow = new IndexedRow(pkDataTypes);
             indexedRow.pointTo(pkRowWriter.segment(), 0, pkRowWriter.position());
